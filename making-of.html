@@ -1,0 +1,900 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="theme-color" content="#F1F4F7">
+<meta name="description" content="AIエージェントとの対話だけで算数アプリを作った記録。実際のプロンプトと、コピーして使えるテンプレート。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>🗺️</text></svg>">
+<title>算数アプリができるまで</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --paper:#F1F4F7;
+  --surface:#FFFFFF;
+  --surface2:#F8FAFC;
+  --ink:#1C242F;
+  --ink2:#65748A;
+  --ink3:#8E9CB0;
+  --line:#DDE4EC;
+  --line2:#EDF1F6;
+  --you:#C4501B;
+  --you-bg:#FCEDE4;
+  --you-line:#F0CDB8;
+  --ai:#1F5AC4;
+  --ai-bg:#E9F0FC;
+  --ai-line:#C4D6F5;
+  --ok:#0F7355;
+  --ok-bg:#E4F3EE;
+  --warn:#9A5B00;
+  --warn-bg:#FBF0DC;
+  --sans:"Zen Kaku Gothic New", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#12161C;
+    --surface:#1A2029;
+    --surface2:#212934;
+    --ink:#E5EAF1;
+    --ink2:#9AA8BC;
+    --ink3:#71809A;
+    --line:#2C3641;
+    --line2:#232B35;
+    --you:#F0916A;
+    --you-bg:#2C1D16;
+    --you-line:#4A2E20;
+    --ai:#7FAEF5;
+    --ai-bg:#151F31;
+    --ai-line:#26364F;
+    --ok:#5BC6A2;
+    --ok-bg:#12251F;
+    --warn:#E0AC5E;
+    --warn-bg:#2A2113;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#12161C;
+  --surface:#1A2029;
+  --surface2:#212934;
+  --ink:#E5EAF1;
+  --ink2:#9AA8BC;
+  --ink3:#71809A;
+  --line:#2C3641;
+  --line2:#232B35;
+  --you:#F0916A;
+  --you-bg:#2C1D16;
+  --you-line:#4A2E20;
+  --ai:#7FAEF5;
+  --ai-bg:#151F31;
+  --ai-line:#26364F;
+  --ok:#5BC6A2;
+  --ok-bg:#12251F;
+  --warn:#E0AC5E;
+  --warn-bg:#2A2113;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--sans);font-weight:400;line-height:1.9;
+  font-size:16px;letter-spacing:.01em;
+}
+.wrap{max-width:820px;margin:0 auto;padding:0 20px 100px}
+h1,h2,h3{margin:0;text-wrap:balance;line-height:1.45}
+h1{font-weight:900;font-size:clamp(1.8rem,5.2vw,2.6rem);letter-spacing:-.01em}
+h2{font-weight:900;font-size:clamp(1.25rem,3.4vw,1.55rem)}
+h3{font-weight:700;font-size:1.02rem}
+p{margin:0}
+a{color:var(--ai)}
+
+/* ---- hero ---- */
+.hero{padding:64px 0 40px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:18px}
+.kicker{
+  font-family:var(--mono);font-size:.72rem;font-weight:600;letter-spacing:.18em;
+  color:var(--ink3);
+}
+.lede{font-size:1.05rem;color:var(--ink2);max-width:34em;line-height:2}
+.hero-links{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.pill{
+  display:inline-flex;align-items:center;gap:8px;
+  border:1px solid var(--line);background:var(--surface);
+  border-radius:999px;padding:9px 16px;font-size:.85rem;font-weight:700;
+  text-decoration:none;color:var(--ink);
+}
+.pill:hover{border-color:var(--ai);color:var(--ai)}
+
+/* ---- section ---- */
+section{padding:52px 0 0;display:flex;flex-direction:column;gap:20px}
+.sec-head{display:flex;flex-direction:column;gap:8px}
+.sec-no{
+  font-family:var(--mono);font-size:.72rem;font-weight:600;letter-spacing:.16em;
+  color:var(--ai);
+}
+.body-col{max-width:38em;display:flex;flex-direction:column;gap:16px;color:var(--ink);line-height:2.05}
+.body-col p{margin:0}
+
+/* ---- dialogue ---- */
+.turn{
+  border-radius:14px;padding:16px 18px 18px;
+  border:1px solid var(--line);background:var(--surface);
+  display:flex;flex-direction:column;gap:10px;
+}
+.turn.you{background:var(--you-bg);border-color:var(--you-line)}
+.turn.ai{background:var(--ai-bg);border-color:var(--ai-line)}
+.speaker{
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:.7rem;font-weight:600;letter-spacing:.14em;
+}
+.turn.you .speaker{color:var(--you)}
+.turn.ai .speaker{color:var(--ai)}
+.speaker .d{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.turn .txt{white-space:pre-wrap;line-height:2.05;font-size:.97rem}
+
+/* ---- annotated prompt ---- */
+.anno{display:flex;flex-direction:column;gap:14px}
+.anno-text{
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:18px;line-height:2.35;font-size:.97rem;
+}
+mark{
+  background:none;color:inherit;padding:2px 0 3px;
+  border-bottom:3px solid var(--m);font-weight:700;
+}
+mark sup{
+  font-family:var(--mono);font-size:.62rem;font-weight:600;
+  color:var(--m);padding-left:3px;vertical-align:super;
+}
+.anno-key{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.key-item{
+  border:1px solid var(--line);border-radius:12px;background:var(--surface);
+  padding:12px 14px;display:flex;flex-direction:column;gap:3px;
+  border-left:4px solid var(--m);
+}
+.key-item b{font-size:.86rem;font-weight:700}
+.key-item span{font-size:.78rem;color:var(--ink2);line-height:1.75}
+
+/* ---- steps ---- */
+.steps{display:flex;flex-direction:column;gap:2px}
+.step{
+  display:grid;grid-template-columns:auto 1fr;gap:16px;
+  padding:16px 0;border-top:1px solid var(--line);
+}
+.step:last-child{border-bottom:1px solid var(--line)}
+.step-no{
+  font-family:var(--mono);font-size:.78rem;font-weight:600;
+  color:var(--ai);padding-top:4px;width:2.4em;
+}
+.step-b{display:flex;flex-direction:column;gap:5px}
+.step-b b{font-size:1rem;font-weight:700}
+.step-b span{font-size:.88rem;color:var(--ink2);line-height:1.9}
+.step-b em{font-style:normal;font-family:var(--mono);font-size:.74rem;color:var(--ink3)}
+
+/* ---- figure ---- */
+figure{margin:0;display:flex;flex-direction:column;gap:10px}
+.fig-scroll{
+  overflow-x:auto;background:var(--surface);
+  border:1px solid var(--line);border-radius:14px;padding:20px 18px;
+}
+.fig-scroll svg{display:block;min-width:620px;width:100%;height:auto}
+figcaption{font-size:.82rem;color:var(--ink2);line-height:1.8}
+figcaption b{color:var(--ink);font-weight:700}
+
+/* ---- callout ---- */
+.call{
+  border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;
+  border:1px solid var(--line);background:var(--surface2);
+}
+.call.ok{background:var(--ok-bg);border-color:transparent}
+.call.ok .call-t{color:var(--ok)}
+.call.warn{background:var(--warn-bg);border-color:transparent}
+.call.warn .call-t{color:var(--warn)}
+.call-t{font-size:.78rem;font-weight:700;font-family:var(--mono);letter-spacing:.1em}
+.call p{font-size:.92rem;line-height:1.95}
+
+/* ---- code / template ---- */
+.tpl{
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  overflow:hidden;
+}
+.tpl-h{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:11px 16px;border-bottom:1px solid var(--line);background:var(--surface2);
+}
+.tpl-h b{font-family:var(--mono);font-size:.72rem;font-weight:600;letter-spacing:.12em;color:var(--ink2)}
+.tpl pre{
+  margin:0;padding:18px 16px;overflow-x:auto;
+  font-family:var(--mono);font-size:.8rem;line-height:2;color:var(--ink);
+  white-space:pre-wrap;word-break:break-word;
+}
+.tpl .slot{color:var(--you);font-weight:600}
+.copy{
+  font:inherit;font-size:.76rem;font-weight:700;font-family:var(--sans);
+  border:1px solid var(--line);background:var(--surface);color:var(--ink2);
+  border-radius:8px;padding:5px 12px;cursor:pointer;
+}
+.copy:hover{color:var(--ai);border-color:var(--ai)}
+
+/* ---- list cards ---- */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.card{
+  border:1px solid var(--line);background:var(--surface);border-radius:14px;
+  padding:16px;display:flex;flex-direction:column;gap:7px;
+}
+.card b{font-size:.92rem;font-weight:700}
+.card p{font-size:.84rem;color:var(--ink2);line-height:1.9}
+.card .tag{
+  font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;font-weight:600;
+  color:var(--ink3);
+}
+
+.dont{display:flex;flex-direction:column;gap:0}
+.dont-row{
+  display:grid;grid-template-columns:auto 1fr;gap:14px;
+  padding:15px 0;border-top:1px solid var(--line);align-items:start;
+}
+.dont-row:last-child{border-bottom:1px solid var(--line)}
+.x{color:var(--you);font-weight:900;font-family:var(--mono);font-size:.9rem;padding-top:3px}
+.dont-row b{display:block;font-size:.94rem;font-weight:700;margin-bottom:3px}
+.dont-row span{font-size:.85rem;color:var(--ink2);line-height:1.9}
+
+hr{border:0;border-top:1px solid var(--line);margin:0}
+.foot{padding:56px 0 0;color:var(--ink3);font-size:.82rem;line-height:1.9}
+
+:focus-visible{outline:2px solid var(--ai);outline-offset:3px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">MAKING OF ／ 2026.08</div>
+  <h1>算数アプリができるまで</h1>
+  <p class="lede">小学1年生むけの算数アプリを、AIエージェント（Claude Code）との対話だけで作った記録です。実際に送った文章と、AIが返してきた質問をそのまま載せています。コードは1行も手で書いていません。</p>
+  <div class="hero-links">
+    <a class="pill" href="./index.html">🐰 できたアプリを開く</a>
+    <span class="pill">⏱ 対話10往復ほど</span>
+  </div>
+</header>
+
+<!-- ===================== 全体像 ===================== -->
+<section>
+  <div class="sec-head">
+    <div class="sec-no">01 ／ 全体像</div>
+    <h2>「作らせる」んじゃなくて「決めていく」</h2>
+  </div>
+  <div class="body-col">
+    <p>いちばん大事なのは、最初のプロンプトの上手さではありません。<b>AIに質問させて、こちらが選ぶ</b>という形にすることです。</p>
+    <p>ざっくり頼むと、AIは足りない情報を勝手に埋めて、それっぽい完成品を一発で出してきます。動くには動くけれど、たいてい「思ってたのと違う」ものが出てくる。そこから直そうとすると、AIは全体を書き直そうとして、直すたびに別のところが壊れます。</p>
+    <p>先に質問させて、選択肢から選んでおけば、この作り直しがまるごと消えます。</p>
+  </div>
+
+  <figure>
+    <div class="fig-scroll">
+      <svg viewBox="-6 -6 976 346" role="img" aria-label="ざっくり頼む進め方は作り直しのループが発生し、先に質問させる進め方はループが発生しない">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+          <marker id="arY" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" style="fill:var(--you)"/>
+          </marker>
+        </defs>
+
+        <!-- lane A -->
+        <text x="0" y="16" style="fill:var(--ink3)" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">A ／ ざっくり頼む</text>
+        <rect x="0" y="34" width="150" height="52" rx="10" style="fill:var(--you-bg);stroke:var(--you-line)" stroke-width="1.5"/>
+        <text x="75" y="58" text-anchor="middle" style="fill:var(--you)" font-family="Zen Kaku Gothic New, sans-serif" font-size="13" font-weight="700">あなた</text>
+        <text x="75" y="75" text-anchor="middle" style="fill:var(--ink2)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11">「算数アプリ作って」</text>
+
+        <line x1="152" y1="60" x2="248" y2="60" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar)"/>
+        <text x="200" y="50" text-anchor="middle" style="fill:var(--ink3)" font-family="Zen Kaku Gothic New, sans-serif" font-size="10.5">依頼</text>
+
+        <rect x="252" y="34" width="150" height="52" rx="10" style="fill:var(--ai-bg);stroke:var(--ai-line)" stroke-width="1.5"/>
+        <text x="327" y="58" text-anchor="middle" style="fill:var(--ai)" font-family="Zen Kaku Gothic New, sans-serif" font-size="13" font-weight="700">AI</text>
+        <text x="327" y="75" text-anchor="middle" style="fill:var(--ink2)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11">足りない所を推測で埋める</text>
+
+        <line x1="404" y1="60" x2="500" y2="60" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar)"/>
+        <text x="452" y="50" text-anchor="middle" style="fill:var(--ink3)" font-family="Zen Kaku Gothic New, sans-serif" font-size="10.5">一発で全部</text>
+
+        <rect x="504" y="34" width="150" height="52" rx="10" style="fill:var(--surface2);stroke:var(--line)" stroke-width="1.5"/>
+        <text x="579" y="65" text-anchor="middle" style="fill:var(--ink)" font-family="Zen Kaku Gothic New, sans-serif" font-size="13" font-weight="700">大きな完成品</text>
+
+        <!-- rework loop -->
+        <path d="M579,90 L579,124 L75,124 L75,90" fill="none" style="stroke:var(--you)" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#arY)"/>
+        <text x="327" y="140" text-anchor="middle" style="fill:var(--you)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11.5" font-weight="700">「思ってたのと違う」→ 全体を書き直し ×何回も</text>
+
+        <line x1="0" y1="166" x2="960" y2="166" style="stroke:var(--line)" stroke-width="1"/>
+
+        <!-- lane B -->
+        <text x="0" y="196" style="fill:var(--ink3)" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">B ／ この記録のやり方</text>
+        <rect x="0" y="214" width="132" height="52" rx="10" style="fill:var(--you-bg);stroke:var(--you-line)" stroke-width="1.5"/>
+        <text x="66" y="238" text-anchor="middle" style="fill:var(--you)" font-family="Zen Kaku Gothic New, sans-serif" font-size="13" font-weight="700">あなた</text>
+        <text x="66" y="255" text-anchor="middle" style="fill:var(--ink2)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11">目的＋「聞いて」</text>
+
+        <line x1="134" y1="240" x2="196" y2="240" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar)"/>
+
+        <rect x="200" y="214" width="132" height="52" rx="10" style="fill:var(--ai-bg);stroke:var(--ai-line)" stroke-width="1.5"/>
+        <text x="266" y="238" text-anchor="middle" style="fill:var(--ai)" font-family="Zen Kaku Gothic New, sans-serif" font-size="13" font-weight="700">AIが質問</text>
+        <text x="266" y="255" text-anchor="middle" style="fill:var(--ink2)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11">選択肢つきで4問</text>
+
+        <line x1="334" y1="240" x2="396" y2="240" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar)"/>
+
+        <rect x="400" y="214" width="132" height="52" rx="10" style="fill:var(--you-bg);stroke:var(--you-line)" stroke-width="1.5"/>
+        <text x="466" y="238" text-anchor="middle" style="fill:var(--you)" font-family="Zen Kaku Gothic New, sans-serif" font-size="13" font-weight="700">選ぶだけ</text>
+        <text x="466" y="255" text-anchor="middle" style="fill:var(--ink2)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11">タップで回答</text>
+
+        <line x1="534" y1="240" x2="596" y2="240" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar)"/>
+
+        <rect x="600" y="214" width="132" height="52" rx="10" style="fill:var(--ai-bg);stroke:var(--ai-line)" stroke-width="1.5"/>
+        <text x="666" y="238" text-anchor="middle" style="fill:var(--ai)" font-family="Zen Kaku Gothic New, sans-serif" font-size="13" font-weight="700">設計を出す</text>
+        <text x="666" y="255" text-anchor="middle" style="fill:var(--ink2)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11">作る前に文章で</text>
+
+        <line x1="734" y1="240" x2="796" y2="240" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar)"/>
+
+        <rect x="800" y="214" width="160" height="52" rx="10" style="fill:var(--ok-bg);stroke:none"/>
+        <text x="880" y="238" text-anchor="middle" style="fill:var(--ok)" font-family="Zen Kaku Gothic New, sans-serif" font-size="13" font-weight="700">実装＋自己検証</text>
+        <text x="880" y="255" text-anchor="middle" style="fill:var(--ink2)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11">1回で通る</text>
+
+        <path d="M466,270 L466,292 L266,292 L266,270" fill="none" style="stroke:var(--ai)" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ar)"/>
+        <text x="366" y="308" text-anchor="middle" style="fill:var(--ink3)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11">ここだけ往復する（安い・速い）</text>
+      </svg>
+    </div>
+    <figcaption><b>図1：往復する場所が違うだけ。</b>Aは完成品ができてから戻るので、戻るたびに全部が作り直しになります。Bは「まだ何も作っていない段階」で往復するので、直しても失うものがありません。</figcaption>
+  </figure>
+</section>
+
+<!-- ===================== STEP 1 ===================== -->
+<section>
+  <div class="sec-head">
+    <div class="sec-no">02 ／ 最初のプロンプト</div>
+    <h2>実際に送った文章はこれだけ</h2>
+  </div>
+
+  <div class="turn you">
+    <div class="speaker"><i class="d"></i>あなた</div>
+    <div class="txt">友人の娘さんが小学校低学年なんだけど、算数の問題のウェブアプリを作って渡してあげようと思っています。
+
+習慣化させる機能もついていて、算数をしっかり勉強できるようにするには、どのような機能にしたらいいと思う？
+
+しっかり作りたいから、必要なことは必要なだけ聞いて。</div>
+  </div>
+
+  <div class="body-col">
+    <p>技術の話はゼロです。「React で」とか「localStorage に保存して」とか、一切書いていません。書く必要がありません。</p>
+    <p>この短い文章の中に、効いている要素が4つ入っています。</p>
+  </div>
+
+  <div class="anno">
+    <div class="anno-text">
+      <mark style="--m:var(--you)">友人の娘さんが小学校低学年<sup>1</sup></mark>なんだけど、<mark style="--m:var(--ai)">算数の問題のウェブアプリ<sup>2</sup></mark>を作って渡してあげようと思っています。<mark style="--m:var(--ok)">習慣化させる機能もついていて、算数をしっかり勉強できるように<sup>3</sup></mark>するには、どのような機能にしたらいいと思う？ しっかり作りたいから、<mark style="--m:var(--warn)">必要なことは必要なだけ聞いて<sup>4</sup></mark>。
+    </div>
+    <div class="anno-key">
+      <div class="key-item" style="--m:var(--you)">
+        <b>1　だれが使うか</b>
+        <span>「小学校低学年の女の子」。これがあるだけで、文字はひらがな、ボタンは大きく、キーボードは使わせない、と全部が決まります。</span>
+      </div>
+      <div class="key-item" style="--m:var(--ai)">
+        <b>2　なにを作るか</b>
+        <span>「ウェブアプリ」。渡し方（URL）と、動く場所（ブラウザ）がここで決まります。</span>
+      </div>
+      <div class="key-item" style="--m:var(--ok)">
+        <b>3　どうなってほしいか</b>
+        <span>「習慣化」「しっかり勉強できる」。機能ではなく<b>目的</b>を書く。機能はAIが提案します。</span>
+      </div>
+      <div class="key-item" style="--m:var(--warn)">
+        <b>4　聞いていい、という許可</b>
+        <span>これが無いとAIは推測で進みます。この一言で、AIは勝手に決めるのをやめて確認しに来ます。</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="call ok">
+    <div class="call-t">POINT</div>
+    <p>4つの中でいちばん効くのは <b>4「必要なことは必要なだけ聞いて」</b>です。これが無いと、他の3つがどれだけ丁寧でも、AIは残りを推測で埋めます。</p>
+  </div>
+</section>
+
+<!-- ===================== STEP 2 ===================== -->
+<section>
+  <div class="sec-head">
+    <div class="sec-no">03 ／ AIからの質問</div>
+    <h2>選択肢つきで聞いてくる。タップするだけ</h2>
+  </div>
+  <div class="body-col">
+    <p>まずAIは「自分ならこう作る」という案を先に出し、そのうえで<b>答えによって作りが変わるところだけ</b>を4つ聞いてきました。</p>
+  </div>
+
+  <div class="turn ai">
+    <div class="speaker"><i class="d"></i>AI</div>
+    <div class="txt">芯になる3つ（ここが効く）
+1. 1回5分・10問のセット制 —「今日のぶん おわり！」で必ず終わる
+2. まちがい直しの自動復習 — 間違えた問題を翌日・3日後・7日後に自動で再出題
+3. 正答率で難易度が自動で上下
+
+…（低学年向けUX・保護者向け機能の案が続く）…
+
+作る前に4つだけ確認させて。ここで作りが変わる。</div>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <div class="tag">Q1 ／ 学年</div>
+      <b>いま学校でやってるあたりは？</b>
+      <p>小1／小2／小3／学年をまたいで選べる形　の4択</p>
+    </div>
+    <div class="card">
+      <div class="tag">Q2 ／ 端末</div>
+      <b>何で使う？</b>
+      <p>iPad／スマホ／PC（複数選択可）</p>
+    </div>
+    <div class="card">
+      <div class="tag">Q3 ／ 配布</div>
+      <b>どうやって渡す？</b>
+      <p>URL共有／HTMLファイル／まだ決めてない</p>
+    </div>
+    <div class="card">
+      <div class="tag">Q4 ／ 保護者機能</div>
+      <b>おうちの人向けはどこまで？</b>
+      <p>レポート＋設定／設定だけ／要らない</p>
+    </div>
+  </div>
+
+  <div class="body-col">
+    <p>選んだ答えは「学年をまたいで選べる形」「iPad とスマホ」「URL共有」「レポート＋設定」。ここまでで、こちらが書いた文字は最初の3行だけです。</p>
+    <p>このあとAIは設計案を出し、さらに3つ質問してきました（1日の問題数／ごほうびの世界観／このまま実装していいか）。「10問×1セット」「おまかせ」「このまま全部作って」と答えて、実装に入りました。</p>
+  </div>
+
+  <div class="call">
+    <div class="call-t">なぜ質問が効くのか</div>
+    <p>AIが聞いてきた4つは、どれも<b>「答えが変わると作り直しになる」</b>ところです。端末がPCだと決まればキーボード入力を許す設計になり、iPadだと決まれば画面内テンキーになる。これを後から変えるのは、最初に決めるより10倍高くつきます。</p>
+  </div>
+</section>
+
+<!-- ===================== STEP 3 ===================== -->
+<section>
+  <div class="sec-head">
+    <div class="sec-no">04 ／ 設計の合意</div>
+    <h2>作る前に、文章で全部見せてもらう</h2>
+  </div>
+  <div class="body-col">
+    <p>質問に答えたあと、AIはコードを書く前に<b>設計を日本語で</b>出してきました。ここが違和感を消す最後のタイミングです。ここで「やっぱりタイマーは付けたい」と言えばタダですが、完成後に言うと作り直しになります。</p>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-no">01</div>
+      <div class="step-b"><b>こども画面</b>
+        <span>ホームは「きょうのミッション」1つだけ。1セット10問、画面内テンキー、ふりがな付きひらがな。不正解は「おしい！もういちど」で×を出さない。</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-no">02</div>
+      <div class="step-b"><b>単元（小1メイン＋小2も解放できる）</b>
+        <span>10のあわせかた／たしざん／ひきざん／3つのかず／くりあがり／くりさがり／ぶんしょうだい。小2（100までのかず・2けた・九九・とけい）は初期OFF。</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-no">03</div>
+      <div class="step-b"><b>習慣化のしくみ</b>
+        <span>スタンプカレンダー、れんぞく日数、おやすみけん（週2枚）、コイン＆コレクション24種。</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-no">04</div>
+      <div class="step-b"><b>おうちの人ページ</b>
+        <span>4桁の暗証番号で開く。週次レポート（やった日数・問題数・正答率・苦手単元）と設定。</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="call warn">
+    <div class="call-t">AIが自分から言ってきた注意点</div>
+    <p>「URL共有＋端末内保存なので、iPad とスマホで進捗は別々になります。同期は仕組み的に不安定なのでおすすめしません。代わりにデータの書き出し／読み込みを付けます」——<b>都合の悪いことを先に言わせる</b>のも、質問させる形にした効果です。</p>
+  </div>
+</section>
+
+<!-- ===================== STEP 4 ===================== -->
+<section>
+  <div class="sec-head">
+    <div class="sec-no">05 ／ 実装と検証</div>
+    <h2>AIに、自分で作ったものをテストさせる</h2>
+  </div>
+  <div class="body-col">
+    <p>ここがいちばん大事な工程です。AIは「できました」と言いますが、その言葉には根拠がありません。<b>実際に動かして確かめさせる</b>ところまでを1セットにします。</p>
+    <p>今回は、AIが自分でブラウザを開き、問題を作る部分を <b>11単元 × 3レベル × 400回 ＝ 13,200問</b> 自動生成して、問題文と答えが一致するかを全件チェックしました。人間には無理な量ですが、AIには数十秒です。</p>
+  </div>
+
+  <figure>
+    <div class="fig-scroll">
+      <svg viewBox="-6 -6 946 246" role="img" aria-label="実装してブラウザで実行し、1万3千問の答えを自動照合して、合わなければ直して再実行するループ">
+        <defs>
+          <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+          <marker id="ar2y" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" style="fill:var(--you)"/>
+          </marker>
+        </defs>
+
+        <rect x="0" y="46" width="140" height="54" rx="10" style="fill:var(--ai-bg);stroke:var(--ai-line)" stroke-width="1.5"/>
+        <text x="70" y="79" text-anchor="middle" style="fill:var(--ai)" font-family="Zen Kaku Gothic New, sans-serif" font-size="13.5" font-weight="700">実装する</text>
+
+        <line x1="142" y1="73" x2="204" y2="73" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+        <rect x="208" y="46" width="160" height="54" rx="10" style="fill:var(--surface2);stroke:var(--line)" stroke-width="1.5"/>
+        <text x="288" y="70" text-anchor="middle" style="fill:var(--ink)" font-family="Zen Kaku Gothic New, sans-serif" font-size="13" font-weight="700">ブラウザで開く</text>
+        <text x="288" y="88" text-anchor="middle" style="fill:var(--ink2)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11">AIが自分で操作する</text>
+
+        <line x1="370" y1="73" x2="432" y2="73" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+        <rect x="436" y="46" width="190" height="54" rx="10" style="fill:var(--surface2);stroke:var(--line)" stroke-width="1.5"/>
+        <text x="531" y="70" text-anchor="middle" style="fill:var(--ink)" font-family="Zen Kaku Gothic New, sans-serif" font-size="13" font-weight="700">13,200問を自動生成</text>
+        <text x="531" y="88" text-anchor="middle" style="fill:var(--ink2)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11">問題文と答えを全件照合</text>
+
+        <line x1="628" y1="73" x2="690" y2="73" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+        <polygon points="760,38 828,73 760,108 692,73" style="fill:var(--warn-bg);stroke:none"/>
+        <text x="760" y="78" text-anchor="middle" style="fill:var(--warn)" font-family="Zen Kaku Gothic New, sans-serif" font-size="12.5" font-weight="700">合ってる？</text>
+
+        <line x1="830" y1="73" x2="878" y2="73" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar2)"/>
+        <text x="854" y="60" text-anchor="middle" style="fill:var(--ok)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11" font-weight="700">はい</text>
+        <text x="884" y="78" style="fill:var(--ok)" font-family="Zen Kaku Gothic New, sans-serif" font-size="13" font-weight="700">公開</text>
+
+        <path d="M760,110 L760,158 L70,158 L70,102" fill="none" style="stroke:var(--you)" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#ar2y)"/>
+        <text x="415" y="178" text-anchor="middle" style="fill:var(--you)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11.5" font-weight="700">いいえ → 直して、もう一度まわす（人間は見ているだけ）</text>
+        <text x="415" y="206" text-anchor="middle" style="fill:var(--ink3)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11">このループの中では、こちらは何も指示していません</text>
+      </svg>
+    </div>
+    <figcaption><b>図2：「作る」と「確かめる」を同じ依頼に含める。</b>実際にこの検証で、まちがえた問題が復習リストに入らないバグが1件見つかり、その場で直りました。</figcaption>
+  </figure>
+
+  <div class="call ok">
+    <div class="call-t">そのまま使える一言</div>
+    <p>実装を頼むときに <b>「作ったら、自分で動かして確かめてから報告して」</b> と付けるだけで、品質がはっきり変わります。「テストも書いて」でも同じ効果があります。</p>
+  </div>
+</section>
+
+<!-- ===================== おまけ：中身 ===================== -->
+<section>
+  <div class="sec-head">
+    <div class="sec-no">06 ／ できたもの</div>
+    <h2>学力が伸びるのは「まちがい直し」の部分</h2>
+  </div>
+  <div class="body-col">
+    <p>見た目はスタンプとシールですが、実際に効いているのは間隔をあけた再出題です。まちがえた問題は消えずに、忘れかけたタイミングで戻ってきます。</p>
+  </div>
+
+  <figure>
+    <div class="fig-scroll">
+      <svg viewBox="-6 -6 912 202" role="img" aria-label="まちがえた問題が翌日、3日後、7日後に再出題され、3回連続で正解すると出題されなくなる仕組み">
+        <defs>
+          <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <line x1="20" y1="96" x2="878" y2="96" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar3)" opacity=".5"/>
+
+        <circle cx="60" cy="96" r="13" style="fill:var(--you)"/>
+        <text x="60" y="66" text-anchor="middle" style="fill:var(--you)" font-family="Zen Kaku Gothic New, sans-serif" font-size="12.5" font-weight="700">まちがえた</text>
+        <text x="60" y="132" text-anchor="middle" style="fill:var(--ink2)" font-family="IBM Plex Mono, monospace" font-size="11">DAY 0</text>
+
+        <circle cx="270" cy="96" r="11" style="fill:var(--ai)"/>
+        <text x="270" y="66" text-anchor="middle" style="fill:var(--ai)" font-family="Zen Kaku Gothic New, sans-serif" font-size="12.5" font-weight="700">もう1回出す</text>
+        <text x="270" y="132" text-anchor="middle" style="fill:var(--ink2)" font-family="IBM Plex Mono, monospace" font-size="11">＋1日</text>
+
+        <circle cx="490" cy="96" r="11" style="fill:var(--ai)"/>
+        <text x="490" y="66" text-anchor="middle" style="fill:var(--ai)" font-family="Zen Kaku Gothic New, sans-serif" font-size="12.5" font-weight="700">また出す</text>
+        <text x="490" y="132" text-anchor="middle" style="fill:var(--ink2)" font-family="IBM Plex Mono, monospace" font-size="11">＋3日</text>
+
+        <circle cx="700" cy="96" r="11" style="fill:var(--ai)"/>
+        <text x="700" y="66" text-anchor="middle" style="fill:var(--ai)" font-family="Zen Kaku Gothic New, sans-serif" font-size="12.5" font-weight="700">最後に出す</text>
+        <text x="700" y="132" text-anchor="middle" style="fill:var(--ink2)" font-family="IBM Plex Mono, monospace" font-size="11">＋7日</text>
+
+        <rect x="790" y="78" width="86" height="36" rx="9" style="fill:var(--ok-bg)"/>
+        <text x="833" y="102" text-anchor="middle" style="fill:var(--ok)" font-family="Zen Kaku Gothic New, sans-serif" font-size="12.5" font-weight="700">卒業</text>
+
+        <text x="380" y="166" text-anchor="middle" style="fill:var(--ink3)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11.5">途中でまた間違えたら、DAY 0 に戻ってやり直し</text>
+        <path d="M490,110 L490,148 L80,148 L80,112" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 4" opacity=".45" marker-end="url(#ar3)"/>
+      </svg>
+    </div>
+    <figcaption><b>図3：間隔をあけた再出題。</b>1日の10問のうち最大4問が、この「戻ってきた問題」になります。残りは正答率の低い単元を厚めに出題しています。</figcaption>
+  </figure>
+</section>
+
+<!-- ===================== テンプレ ===================== -->
+<section>
+  <div class="sec-head">
+    <div class="sec-no">07 ／ 型</div>
+    <h2>コピーして使えるプロンプト</h2>
+  </div>
+  <div class="body-col">
+    <p>オレンジの部分を自分の内容に入れ替えるだけです。長く書く必要はありません。</p>
+  </div>
+
+  <div class="tpl">
+    <div class="tpl-h"><b>TEMPLATE ／ 何かを作ってもらうとき</b><button class="copy" data-t="t1">コピー</button></div>
+    <pre id="t1"><span class="slot">〔だれ〕</span>が使う <span class="slot">〔なに〕</span>を作りたい。
+
+<span class="slot">〔どうなってほしいか。機能ではなく目的を書く〕</span>ようにするには、
+どんな作りにしたらいいと思う？
+
+しっかり作りたいから、必要なことは必要なだけ聞いて。</pre>
+  </div>
+
+  <div class="tpl">
+    <div class="tpl-h"><b>TEMPLATE ／ 実装をお願いするとき</b><button class="copy" data-t="t2">コピー</button></div>
+    <pre id="t2">この内容で作って。
+
+作り終わったら自分で動かして確かめて、
+確かめた結果だけを報告して。
+動かしていないことは「動いた」と言わないで。</pre>
+  </div>
+
+  <div class="tpl">
+    <div class="tpl-h"><b>TEMPLATE ／ 直してほしいとき</b><button class="copy" data-t="t3">コピー</button></div>
+    <pre id="t3"><span class="slot">〔どこが〕</span>が <span class="slot">〔どうなっている〕</span>。
+本当は <span class="slot">〔こうなってほしい〕</span>。
+
+他のところは触らないで、そこだけ直して。</pre>
+  </div>
+
+  <div class="call">
+    <div class="call-t">最後の1行が効く</div>
+    <p>「他のところは触らないで」を付けないと、AIは親切心で周りも書き換えて、動いていた部分を壊すことがあります。修正のたびに付けてください。</p>
+  </div>
+</section>
+
+<!-- ===================== 引き継ぎ ===================== -->
+<section>
+  <div class="sec-head">
+    <div class="sec-no">08 ／ 引き継ぎ</div>
+    <h2>このアプリを、自分で改造していく</h2>
+  </div>
+  <div class="body-col">
+    <p>このアプリは <b>HTMLファイル1個</b>で全部できています。サーバーもデータベースもGitHubも要りません。ファイルを1つ受け取って、そのフォルダでAIを開けば、その日から改造できます。</p>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-no">01</div>
+      <div class="step-b"><b>ファイルを置く</b>
+        <span>受け取った <em>index.html</em> を、好きなフォルダに入れます。たとえば <em>~/sansu/index.html</em>。中身はこの1ファイルだけで、他に必要なものはありません。</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-no">02</div>
+      <div class="step-b"><b>そのフォルダでAIを開く</b>
+        <span>Claude Code をそのフォルダで起動します。ターミナルなら <em>cd ~/sansu</em> してから <em>claude</em>。これで、AIがそのファイルを直接読み書きできる状態になります。</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-no">03</div>
+      <div class="step-b"><b>日本語で頼む</b>
+        <span>「index.html が算数アプリです。九九を最初からONにして、あと『たしざんめいじん』みたいな称号を追加して」——この調子で大丈夫です。コードを読む必要はありません。</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-no">04</div>
+      <div class="step-b"><b>自分で公開する</b>
+        <span>「これを公開してURLにして」と頼めば、自分のアカウントのURLが発行されます。そこから先は自分のアプリです。更新しても同じURLのままで、お子さんの進捗も消えません。</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="call warn">
+    <div class="call-t">先に知っておくこと</div>
+    <p>AIに任せて改造していくと、<b>今まで動いていた部分が壊れることがあります</b>。「ボタンの色を変えて」と頼んだのに、なぜか採点がおかしくなる。これは珍しいことではなく、普通に起きます。<br>だから、直す前に「戻れる場所」を作っておきます。</p>
+  </div>
+</section>
+
+<!-- ===================== git ===================== -->
+<section>
+  <div class="sec-head">
+    <div class="sec-no">09 ／ 保険</div>
+    <h2>Gitで「戻れる場所」を作っておく</h2>
+  </div>
+  <div class="body-col">
+    <p>Gitはプログラマー向けの難しい道具に見えますが、ここで使うのは<b>「その時点の状態を保存する」</b>という一点だけです。ゲームのセーブと同じで、覚えるコマンドは3つで足ります。</p>
+    <p>GitHub（インターネット上にコードを置くサービス）は<b>使いません</b>。自分のパソコンの中だけで完結します。</p>
+  </div>
+
+  <figure>
+    <div class="fig-scroll">
+      <svg viewBox="-6 -6 772 292" role="img" aria-label="Gitを使わないと壊れたときに戻る場所が無いが、コミットしておけば直前の動く状態に1コマンドで戻れる">
+        <defs>
+          <marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" style="fill:var(--ok)"/>
+          </marker>
+        </defs>
+
+        <text x="0" y="16" style="fill:var(--ink3)" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">A ／ 保存していない</text>
+        <line x1="60" y1="62" x2="620" y2="62" stroke="currentColor" stroke-width="1.5" opacity=".35"/>
+        <circle cx="80" cy="62" r="8" fill="currentColor" opacity=".4"/>
+        <circle cx="260" cy="62" r="8" fill="currentColor" opacity=".4"/>
+        <circle cx="440" cy="62" r="8" fill="currentColor" opacity=".4"/>
+        <text x="80" y="44" text-anchor="middle" style="fill:var(--ink2)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11.5">もらった版</text>
+        <text x="260" y="44" text-anchor="middle" style="fill:var(--ink2)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11.5">色を変えた</text>
+        <text x="440" y="44" text-anchor="middle" style="fill:var(--ink2)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11.5">九九を足した</text>
+        <line x1="602" y1="52" x2="618" y2="72" style="stroke:var(--you)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="618" y1="52" x2="602" y2="72" style="stroke:var(--you)" stroke-width="3" stroke-linecap="round"/>
+        <text x="610" y="44" text-anchor="middle" style="fill:var(--you)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11.5" font-weight="700">壊れた</text>
+        <text x="340" y="96" text-anchor="middle" style="fill:var(--you)" font-family="Zen Kaku Gothic New, sans-serif" font-size="12" font-weight="700">戻る場所が無い。どこで壊れたかも分からない</text>
+
+        <line x1="0" y1="126" x2="760" y2="126" style="stroke:var(--line)" stroke-width="1"/>
+
+        <text x="0" y="158" style="fill:var(--ink3)" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">B ／ 区切りごとにコミット</text>
+        <line x1="60" y1="204" x2="620" y2="204" stroke="currentColor" stroke-width="1.5" opacity=".35"/>
+        <circle cx="80" cy="204" r="9" style="fill:var(--ok)"/>
+        <circle cx="260" cy="204" r="9" style="fill:var(--ok)"/>
+        <circle cx="440" cy="204" r="9" style="fill:var(--ok)"/>
+        <text x="80" y="186" text-anchor="middle" style="fill:var(--ok)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11.5" font-weight="700">コミット</text>
+        <text x="260" y="186" text-anchor="middle" style="fill:var(--ok)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11.5" font-weight="700">コミット</text>
+        <text x="440" y="186" text-anchor="middle" style="fill:var(--ok)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11.5" font-weight="700">コミット</text>
+        <line x1="602" y1="194" x2="618" y2="214" style="stroke:var(--you)" stroke-width="3" stroke-linecap="round"/>
+        <line x1="618" y1="194" x2="602" y2="214" style="stroke:var(--you)" stroke-width="3" stroke-linecap="round"/>
+        <text x="610" y="186" text-anchor="middle" style="fill:var(--you)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11.5" font-weight="700">壊れた</text>
+        <path d="M610,220 L610,246 L452,246" fill="none" style="stroke:var(--ok)" stroke-width="1.8" marker-end="url(#ar4)"/>
+        <text x="640" y="250" style="fill:var(--ok)" font-family="IBM Plex Mono, monospace" font-size="11.5" font-weight="600">1行で戻る</text>
+        <text x="240" y="250" text-anchor="middle" style="fill:var(--ink2)" font-family="Zen Kaku Gothic New, sans-serif" font-size="12">直前の「動いていた状態」まで巻き戻す</text>
+        <text x="340" y="276" text-anchor="middle" style="fill:var(--ink3)" font-family="Zen Kaku Gothic New, sans-serif" font-size="11">コミットは何個あっても無料。迷ったら打っておく</text>
+      </svg>
+    </div>
+    <figcaption><b>図4：やることは「うまくいったらセーブ」だけ。</b>コミットしていない時間が長いほど、壊れたときに失うものが増えます。1つ直して動いたら、その場でコミットするのがいちばん安全です。</figcaption>
+  </figure>
+
+  <div class="tpl">
+    <div class="tpl-h"><b>1／最初の1回だけ</b><button class="copy" data-t="g1">コピー</button></div>
+    <pre id="g1">cd ~/sansu
+git init
+git add .
+git commit -m "もらった最初の版"</pre>
+  </div>
+
+  <div class="tpl">
+    <div class="tpl-h"><b>2／直して、動いたら（毎回）</b><button class="copy" data-t="g2">コピー</button></div>
+    <pre id="g2">git add .
+git commit -m "<span class="slot">九九を最初からONにした</span>"</pre>
+  </div>
+
+  <div class="tpl">
+    <div class="tpl-h"><b>3／壊れたとき</b><button class="copy" data-t="g3">コピー</button></div>
+    <pre id="g3">git checkout -- .</pre>
+  </div>
+
+  <div class="body-col">
+    <p><b>3番</b>は「最後にコミットした状態に戻す」という意味です。ここまでの変更は消えますが、コミット済みのところまでは必ず戻ります。これがあるだけで、思い切って試せるようになります。</p>
+  </div>
+
+  <div class="call ok">
+    <div class="call-t">じつは、コマンドを覚えなくてもいい</div>
+    <p>Claude Code はGitも操作できます。動作を確認したあとに <b>「いまの状態でコミットして」</b> と言えば、そのまま保存してくれます。壊れたときも <b>「さっきのコミットまで戻して」</b> で戻せます。<br>最初の <em>git init</em> だけ1回打っておけば、あとは日本語で足ります。</p>
+  </div>
+
+  <h3 style="margin-top:8px">コミットするタイミング</h3>
+  <div class="cards">
+    <div class="card">
+      <div class="tag">TIMING 01</div>
+      <b>ひとつ直して、動いたとき</b>
+      <p>いちばん大事。「動く状態」を1つずつ積み上げていきます。1機能＝1コミットが目安です。</p>
+    </div>
+    <div class="card">
+      <div class="tag">TIMING 02</div>
+      <b>大きい変更を頼む前</b>
+      <p>「デザインを全部やり直して」の直前。気に入らなければ丸ごと捨てられます。</p>
+    </div>
+    <div class="card">
+      <div class="tag">TIMING 03</div>
+      <b>その日の作業を終えるとき</b>
+      <p>中途半端でも構いません。翌日「昨日どこまでやったか」が残ります。</p>
+    </div>
+  </div>
+
+  <h3 style="margin-top:8px">GitHubは、こうなったら考える</h3>
+  <div class="dont">
+    <div class="dont-row"><span class="x" style="color:var(--ink3)">—</span><div>
+      <b>1台のパソコンで、自分だけで直す</b>
+      <span>GitHubは要りません。ここまでのやり方だけで足ります。</span>
+    </div></div>
+    <div class="dont-row"><span class="x" style="color:var(--ai)">＋</span><div>
+      <b>会社のPCと自宅のPC、両方で作業したい</b>
+      <span>GitHubに置けば、どちらからでも取り出せます。</span>
+    </div></div>
+    <div class="dont-row"><span class="x" style="color:var(--ai)">＋</span><div>
+      <b>誰かと一緒に直したい</b>
+      <span>同じ場所を見ながら、それぞれが直せるようになります。</span>
+    </div></div>
+    <div class="dont-row"><span class="x" style="color:var(--ai)">＋</span><div>
+      <b>パソコンが壊れても残したい</b>
+      <span>バックアップとして。GitHubでなくクラウドドライブへのコピーでも構いません。</span>
+    </div></div>
+  </div>
+</section>
+
+<!-- ===================== 応用 ===================== -->
+<section>
+  <div class="sec-head">
+    <div class="sec-no">10 ／ 応用</div>
+    <h2>同じやり方が、仕事でもそのまま効く</h2>
+  </div>
+  <div class="cards">
+    <div class="card">
+      <div class="tag">CASE 01</div>
+      <b>娘さん用の問題集をもう1本</b>
+      <p>「漢字の書き取り」「英単語」も、単元とレベルを差し替えるだけで同じ構造で作れます。今回のアプリを見せて「これの漢字版を」と言えば通ります。</p>
+    </div>
+    <div class="card">
+      <div class="tag">CASE 02</div>
+      <b>くり返しやっている手作業</b>
+      <p>毎週の集計、ファイル名の整理、CSVの変換。「毎週こういう作業をしている、自動化したい、必要なことは聞いて」から始めます。</p>
+    </div>
+    <div class="card">
+      <div class="tag">CASE 03</div>
+      <b>社内で共有する資料や表</b>
+      <p>この記録のページ自体もAIが作っています。「◯◯を、図も入れて分かりやすくHTMLでまとめて」で出てきます。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== つまずき ===================== -->
+<section>
+  <div class="sec-head">
+    <div class="sec-no">11 ／ 注意</div>
+    <h2>これをやると、たいてい失敗する</h2>
+  </div>
+  <div class="dont">
+    <div class="dont-row"><span class="x">01</span><div>
+      <b>1回のメッセージに要望を詰め込む</b>
+      <span>「あれもこれも」と10個並べると、AIは半分しか実装しません。1メッセージ1テーマにして、終わったら次へ。</span>
+    </div></div>
+    <div class="dont-row"><span class="x">02</span><div>
+      <b>技術用語を無理に使う</b>
+      <span>知らない言葉を混ぜると、AIはそれに引っ張られて遠回りします。日本語で「こうなってほしい」と書けば十分です。</span>
+    </div></div>
+    <div class="dont-row"><span class="x">03</span><div>
+      <b>「できました」を鵜呑みにする</b>
+      <span>必ず自分でも一度触ってください。AIが確かめたのは自分が想定した動きだけで、あなたの使い方ではありません。</span>
+    </div></div>
+    <div class="dont-row"><span class="x">04</span><div>
+      <b>会話が長くなっても同じ場所で続ける</b>
+      <span>話題が変わったら新しい会話を始めます。長い会話は、前半の情報が薄れて精度が落ちます。</span>
+    </div></div>
+    <div class="dont-row"><span class="x">05</span><div>
+      <b>うまくいった形を残さない</b>
+      <span>効いたプロンプトはメモしておくと、次から同じ品質が出せます。この記録も、そのメモ代わりです。</span>
+    </div></div>
+  </div>
+</section>
+
+<hr style="margin-top:56px">
+<p class="foot">この記録に載せたやり取りは、実際の会話の抜粋です。アプリのコードは全体で約1,300行、すべてAIが書いています。<br>できたアプリ ▸ <a href="./index.html">さんすうスタンプ</a></p>
+
+</div>
+
+<script>
+document.querySelectorAll(".copy").forEach(b=>{
+  b.addEventListener("click", async ()=>{
+    const el = document.getElementById(b.dataset.t);
+    const txt = el.innerText;
+    try{
+      await navigator.clipboard.writeText(txt);
+      b.textContent = "コピーしました";
+    }catch(e){
+      const r = document.createRange();
+      r.selectNodeContents(el);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      b.textContent = "選択しました";
+    }
+    setTimeout(()=> b.textContent = "コピー", 1600);
+  });
+});
+</script>
+
+</body>
+</html>
