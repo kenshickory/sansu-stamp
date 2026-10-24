@@ -35,7 +35,7 @@ def creature_material(name, mat):
     tc = _node(nt, "ShaderNodeTexCoord", (-1200, 0))
 
     # 色むら
-    noise = _node(nt, "ShaderNodeTexNoise", (-800, 450), Scale=3.0, Detail=6.0)
+    noise = _node(nt, "ShaderNodeTexNoise", (-800, 450), Scale=3.0, Detail=2.0)
     L(tc.outputs["Object"], noise.inputs["Vector"])
     var = _node(nt, "ShaderNodeMapRange", (-550, 450))
     var.inputs["To Min"].default_value = 0.82
@@ -116,7 +116,7 @@ def creature_material(name, mat):
         w1 = _node(nt, "ShaderNodeTexVoronoi", (-800, -400), Scale=11.0)
         w1.feature = "DISTANCE_TO_EDGE"
         L(tc.outputs["Object"], w1.inputs["Vector"])
-        w2 = _node(nt, "ShaderNodeTexNoise", (-800, -650), Scale=40.0, Detail=8.0, Roughness=0.6)
+        w2 = _node(nt, "ShaderNodeTexNoise", (-800, -650), Scale=40.0, Detail=3.0, Roughness=0.6)
         L(tc.outputs["Object"], w2.inputs["Vector"])
         add = _node(nt, "ShaderNodeMath", (-550, -500))
         add.operation = "ADD"
