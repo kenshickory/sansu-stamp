@@ -107,6 +107,18 @@ for name in ("top", "dome", "past"):
     tt = np.arange(n) / SR
     sig = sum(np.sin(2 * np.pi * midi(m) * tt) * np.exp(-tt * (1.5 + i)) for i, m in enumerate((69, 76, 81)))
     add(sig * 0.06, ts(name) + 0.3)
+# 解説パート: カードごとに明るい「ピコン」と、数字がふえるときのきらきら音
+for c in meta.get("cues", []):
+    n = int(1.2 * SR)
+    tt = np.arange(n) / SR
+    sig = (np.sin(2 * np.pi * midi(84) * tt) * np.exp(-tt * 6) * (tt < 0.12)
+           + np.sin(2 * np.pi * midi(91) * tt) * np.exp(-tt * 5) * (tt >= 0.12))
+    add(sig * 0.07, c + 0.4)
+    n = int(1.3 * SR)
+    tt = np.arange(n) / SR
+    f = 1200 + 1600 * tt / 1.3
+    sp = np.sin(2 * np.pi * np.cumsum(f) / SR) * (0.5 + 0.5 * np.sin(2 * np.pi * 18 * tt)) * np.exp(-tt * 1.5)
+    add(sp * 0.025, c + 1.6, pan=0.6)
 # 低いブーン(全体が見えた瞬間)
 n = int(4 * SR)
 tt = np.arange(n) / SR

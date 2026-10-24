@@ -240,22 +240,28 @@ def past_square(base, f, a, grow):
 
 
 STILLS = os.environ.get("STILLS")
+EXPLAIN = os.environ.get("EXPLAIN", "1") == "1"   # 「計算してみよう」パートを入れるか
+import explain as EX
 cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
        "-r", str(FPS), "-i", "-", "-i", audio, "-c:v", "libx264", "-preset", "slow", "-crf", "18",
        "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", out]
 ff = None if STILLS else subprocess.Popen(cmd, stdin=subprocess.PIPE)
-last = None
 tp, tt_, td, tpa, to = (tstart(k) for k in ("pull", "top", "dome", "past", "outro"))
-for f in range(1, meta["frames"] + 1):
+_last = [None]
+
+
+def src_path(f):
     path = os.path.join(frames_dir, f"{f:04d}.png")
     if not os.path.exists(path):
-        if STILLS:
-            continue
-        path = last   # 1コマおきの下書きは、直前のコマで埋める
-    last = path
-    img = Image.open(path).convert("RGBA")
-    t = (f - 1) / FPS
+        path = _last[0]   # 1コマおきの下書きは、直前のコマで埋める
+    _last[0] = path
+    return path
 
+
+def render_frame(f):
+    """レンダリング済みのコマ f に、文字や目盛りを重ねる。"""
+    img = Image.open(src_path(f)).convert("RGBA")
+    t = (f - 1) / FPS
     img = center_text(img, [("世界中のアフリカゾウを", F_TITLE2, WHITE),
                             ("ぜんぶ1か所に集めたら？", F_TITLE, ACCENT)],
                       fade(t, 0.5, T["intro"] - 0.3, 0.8, 0.6), y=0.2)
@@ -280,19 +286,67 @@ for f in range(1, meta["frames"] + 1):
                       fade(t, to + 0.2, END + 1, 0.6, 0.6), y=0.22)
     lay = layer()
     d = ImageDraw.Draw(lay)
-    text(d, (W - 30 * S, H - 24 * S),
+    text(d, (W - 30 * S, H - 52 * S),
          "数値: IUCN African Elephant Status Report 2016 (約41.5万頭) / 1979年の大陸調査 (約130万頭) / 1頭6m×3mは見せ方のための仮定",
+         F_SRC, fill=(230, 230, 230), anchor="rd", stroke=2)
+    text(d, (W - 30 * S, H - 24 * S),
+         "食べる量・水・フン・重さは動物園や保護団体の資料の目安から平均値を仮定 / お米: 農林水産省 令和6年産水稲の収穫量 (約735万トン)",
          F_SRC, fill=(230, 230, 230), anchor="rd", stroke=2)
     img = paste(img, lay, fade(t, to + 0.5, END + 1, 0.6, 0.6))
     k = ease((t - (END - 0.8)) / 0.8)
     rgb = img.convert("RGB")
     if k > 0:
         rgb = Image.blend(rgb, Image.new("RGB", rgb.size, (0, 0, 0)), k)
+    return rgb
+
+
+def emit(rgb, n):
     if STILLS:
-        rgb.save(os.path.join(STILLS, f"c{f:04d}.png"))
-        continue
+        if n % 12 == 0:
+            rgb.save(os.path.join(STILLS, f"c{n:04d}.png"))
+        return
     ff.stdin.write(rgb.tobytes())
+
+
+n = 0
+f_cut = int(round(tpa * FPS)) + 1        # ここ(1979年の場面の前)に解説パートを差しこむ
+for f in range(1, f_cut):
+    if STILLS and not os.path.exists(os.path.join(frames_dir, f"{f:04d}.png")):
+        continue
+    n += 1
+    last_rgb = render_frame(f)
+    emit(last_rgb, n)
+if EXPLAIN:
+    P = EX.Painter(W, H, font_path)
+    # 背景に使うコマ(場面ごとに変える)
+    bg_frames = dict(intro=int((tt_ + 2) * FPS), weight=130, food=230, water=320, dung=420,
+                     row=int((tt_ + 1) * FPS), stack=int((td + 4) * FPS))
+    first = True
+    for st in EX.STATS:
+        bf = bg_frames[st["key"]]
+        bg = Image.open(src_path(bf)).convert("RGBA")
+        nf = int(round(st["dur"] * FPS))
+        for k in range(nf):
+            t = k / FPS
+            img = EX.draw(P, st, t, bg).convert("RGB")
+            # 場面の切りかわりは 0.4 秒のクロスフェード
+            if k < 10 and last_rgb is not None:
+                img = Image.blend(last_rgb, img, ease((k + 1) / 10))
+            n += 1
+            emit(img, n)
+        last_rgb = img
+    fade_from = last_rgb
+else:
+    fade_from = None
+for i, f in enumerate(range(f_cut, meta["frames"] + 1)):
+    if STILLS and not os.path.exists(os.path.join(frames_dir, f"{f:04d}.png")):
+        continue
+    rgb = render_frame(f)
+    if fade_from is not None and i < 10:
+        rgb = Image.blend(fade_from, rgb, ease((i + 1) / 10))
+    n += 1
+    emit(rgb, n)
 if ff:
     ff.stdin.close()
     ff.wait()
-print("done", out)
+print("done", out, n, "frames")
