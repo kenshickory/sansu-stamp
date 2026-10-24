@@ -216,7 +216,7 @@ def dome_grid(base, f, a, grow):
         y = -SY / 2 + j * DOME_SIDE
         polyline(d, f, [(-SX / 2, y, 2), (SX / 2, y, 2)], col, max(1, int(2 * S)), steps=24)
     # ドームの印
-    xy, ok = project(f, [DOME[:2] + [60], DOME[:2] + [260]])
+    xy, ok = project(f, [DOME[:2] + [60], DOME[:2] + [520]])
     if ok.all():
         d.line([tuple(xy[0]), tuple(xy[1])], fill=WHITE, width=int(3 * S))
         text(d, (xy[1][0], xy[1][1] - 8 * S), "東京ドーム", F_LABEL, anchor="md", stroke=4)
@@ -264,7 +264,7 @@ for f in range(1, meta["frames"] + 1):
                 "いま地球にいるのは 推定 約41万5000頭"])
     img = counter(img, f, fade(t, tp - 0.2, tt_ + 0.5, 0.5, 0.4))
     img = counter(img, f, fade(t, tt_ + 0.5, td + 0.3, 0.3, 0.5), final=True)
-    img = herd_outline(img, f, fade(t, tt_ + 0.3, tpa + T["past"] - 0.2, 0.6, 0.5))
+    img = herd_outline(img, f, fade(t, tt_ + 0.3, tpa + T["past"] - 0.2, 0.6, 0.5), labels=t < td + 0.8)
     img = card(img, t, tt_ + 0.8, td - 0.1, "1頭あたり 6m×3m で計算", f"約{jp_big(415000)}頭",
                [f"一辺 約{SX / 1000:.1f} km の正方形 ／ 広さ 約{AREA:.1f} km²"])
     img = dome_grid(img, f, fade(t, td + 1.0, tpa - 0.1, 0.5, 0.5), ease((t - td - 1.5) / 2.5))
